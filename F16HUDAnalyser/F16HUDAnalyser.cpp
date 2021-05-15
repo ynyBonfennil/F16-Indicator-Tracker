@@ -5,6 +5,44 @@
 #include <numeric>
 #include <windows.h>
 
+#include "AltimeterTracker.h"
+#include "AirspeedIndicatorTracker.h"
+
+int tmp_main()
+{
+	// open mp4
+	std::string filepath = "..\\movie.mp4";
+	cv::VideoCapture video;
+	video.open(filepath);
+	if (!video.isOpened())
+	{
+		std::cout << "Failed to open " << filepath << std::endl;
+		return -1;
+	}
+	video.set(cv::CAP_PROP_POS_FRAMES, 2060);
+
+	int altimeter_mask_offset = 0;
+	int airspeed_mask_offset = 0;
+	cv::Mat frame;
+	AltimeterTracker altimeter_tracker;
+	AirspeedIndicatorTracker airspeed_tracker;
+
+	while (1)
+	{
+		// load frame
+		video >> frame;
+		if (frame.empty())
+			break;
+
+		cv::Mat airspeed_indicator;
+		frame(cv::Rect(cv::Point(59, 59), cv::Point(74, 142))).copyTo(airspeed_indicator);
+
+		cv::cvtColor(airspeed_indicator, airspeed_indicator, cv::COLOR_BGR2GRAY);
+		cv::Canny(airspeed_indicator, airspeed_indicator, 100, 200);
+		cv::imshow("airspeed indicator", airspeed_indicator);
+		cv::waitKey(0);
+	}
+}
 
 int main()
 {
@@ -19,74 +57,43 @@ int main()
 	}
 	video.set(cv::CAP_PROP_POS_FRAMES, 2060);
 
-	cv::Mat frame, frame_gray;
-	int frame_num = 0;
+	int altimeter_mask_offset = 0;
+	int airspeed_mask_offset = 0;
+	cv::Mat frame;
+	AltimeterTracker altimeter_tracker;
+	AirspeedIndicatorTracker airspeed_tracker;
 
-	cv::Rect rect_altimeter = cv::Rect(cv::Point(254, 59), cv::Point(286, 147));
-	cv::Rect rect_altimeter_numbers = cv::Rect(cv::Point(263, 59), cv::Point(286, 147));
-	const int NUM_OF_MASKS = 5;
-	const int MASK_WIDTH = 23;
-	const int MASK_HEIGHT = 12;
-	const int MASK_SLIDE_MIN = -10;
-	const int MASK_SLIDE_MAX = 10;
-	const int MASK_INTERVAL = 21;
-	int mask_offset = 0;
-
-	// analyse frame by frame
 	while (1)
 	{
 		// load frame
 		video >> frame;
 		if (frame.empty())
 			break;
-		cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
-		cv::Canny(frame_gray, frame_gray, 100, 200);
 
-		// create masks of altimeter (especially indicator numbers)
-		// numbers detection is realized by sliding masks and
-		// calculating bitwise and Canny edge detection result and the mask.
-		// for each frame
-		int best_mask_slide = 0;
-		std::array<int, NUM_OF_MASKS> best_count_nonzero = { 0, 0, 0, 0 };
-		int max_count_nonzero = 0;
-		for (int mask_slide = MASK_SLIDE_MIN; mask_slide < MASK_SLIDE_MAX; mask_slide++)
+		altimeter_tracker.set_initial_mask_offset(altimeter_mask_offset);
+		altimeter_tracker.set_input_image(frame);
+		altimeter_tracker.fit();
+		altimeter_mask_offset = altimeter_tracker.get_mask_offset();
+		std::vector<cv::Rect> altimeter_mask_pos = altimeter_tracker.get_numbers_bbox();
+
+		airspeed_tracker.set_initial_mask_offset(airspeed_mask_offset);
+		airspeed_tracker.set_input_image(frame);
+		airspeed_tracker.fit();
+		airspeed_mask_offset = airspeed_tracker.get_mask_offset();
+		std::vector<cv::Rect> airspeed_mask_pos = airspeed_tracker.get_numbers_bbox();
+
+		for (auto itr = altimeter_mask_pos.begin(); itr != altimeter_mask_pos.end(); ++itr)
 		{
-			cv::Mat mask_canvas_gray, bitwise_and_dst;
-			cv::Rect mask;
-			std::array<int, NUM_OF_MASKS> count_nonzero;
-
-			for (int mask_num = 0; mask_num < NUM_OF_MASKS; mask_num++)
-			{
-				mask_canvas_gray = cv::Mat(frame.rows, frame.cols, CV_8UC1, cv::Scalar(0));
-				mask = cv::Rect(263, 59 + mask_offset%MASK_INTERVAL + mask_slide + MASK_INTERVAL * mask_num, MASK_WIDTH, MASK_HEIGHT);
-				cv::rectangle(mask_canvas_gray, mask, cv::Scalar(255, 255, 255), -1);
-				cv::bitwise_and(frame_gray, mask_canvas_gray, bitwise_and_dst);
-				count_nonzero[mask_num] = cv::countNonZero(bitwise_and_dst);
-			}
-
-			int count_nonzero_sum = std::accumulate(count_nonzero.begin(), count_nonzero.end(), 0);
-			if (count_nonzero_sum > max_count_nonzero)
-			{
-				max_count_nonzero = count_nonzero_sum;
-				best_count_nonzero = count_nonzero;
-				best_mask_slide = mask_slide;
-			}
-			
+			cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
 		}
-		mask_offset += best_mask_slide;
-		std::cout << mask_offset << " " << best_mask_slide << std::endl;
 
-		// draw rectangles on the numbers detected
-		for (int mask_num = 0; mask_num < NUM_OF_MASKS; mask_num++)
+		for (auto itr = airspeed_mask_pos.begin(); itr != airspeed_mask_pos.end(); ++itr)
 		{
-			if (best_count_nonzero[mask_num] > 50)
-			{
-				cv::Rect rect(263, 59 + mask_offset%MASK_INTERVAL + MASK_INTERVAL * mask_num, MASK_WIDTH, MASK_HEIGHT);
-				cv::rectangle(frame, rect, cv::Scalar(0, 255, 0), 1);
-			}
+			cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
 		}
-		cv::imshow("mask", frame);
+
+		cv::imshow("frame", frame);
 		cv::waitKey(1);
-		frame_num++;
+
 	}
 }
