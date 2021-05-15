@@ -19,12 +19,12 @@ int main()
 	}
 	video.set(cv::CAP_PROP_POS_FRAMES, 2060);
 
-	cv::Mat image;
-	cv::Mat altimeter, altimeter_numbers, altimeter_numbers_gray;
-	int frame = 0;
+	cv::Mat frame, frame_gray;
+	int frame_num = 0;
 
 	cv::Rect rect_altimeter = cv::Rect(cv::Point(254, 59), cv::Point(286, 147));
 	cv::Rect rect_altimeter_numbers = cv::Rect(cv::Point(263, 59), cv::Point(286, 147));
+	const int NUM_OF_MASKS = 5;
 	const int MASK_WIDTH = 23;
 	const int MASK_HEIGHT = 12;
 	const int MASK_SLIDE_MIN = -10;
@@ -36,33 +36,31 @@ int main()
 	while (1)
 	{
 		// load frame
-		video >> image;
-		image(rect_altimeter_numbers).copyTo(altimeter_numbers);
-		if (image.empty())
+		video >> frame;
+		if (frame.empty())
 			break;
-		cv::cvtColor(altimeter_numbers, altimeter_numbers_gray, cv::COLOR_BGR2GRAY);
-		cv::Canny(altimeter_numbers_gray, altimeter_numbers_gray, 100, 200);
+		cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
+		cv::Canny(frame_gray, frame_gray, 100, 200);
 
 		// create masks of altimeter (especially indicator numbers)
 		// numbers detection is realized by sliding masks and
 		// calculating bitwise and Canny edge detection result and the mask.
 		// for each frame
 		int best_mask_slide = 0;
-		std::array<int, 5> best_count_nonzero = { 0, 0, 0, 0, 0 };
+		std::array<int, NUM_OF_MASKS> best_count_nonzero = { 0, 0, 0, 0 };
 		int max_count_nonzero = 0;
 		for (int mask_slide = MASK_SLIDE_MIN; mask_slide < MASK_SLIDE_MAX; mask_slide++)
 		{
-			cv::Mat mask_canvas, mask_canvas_gray, bitwise_and_dst;
+			cv::Mat mask_canvas_gray, bitwise_and_dst;
 			cv::Rect mask;
-			std::array<int, 5> count_nonzero;
+			std::array<int, NUM_OF_MASKS> count_nonzero;
 
-			for (int mask_num = 0; mask_num < 5; mask_num++)
+			for (int mask_num = 0; mask_num < NUM_OF_MASKS; mask_num++)
 			{
-				mask_canvas = cv::Mat(88, 23, CV_8UC3, cv::Scalar(0));
-				mask = cv::Rect(0, mask_offset%MASK_INTERVAL + mask_slide + MASK_INTERVAL * mask_num, MASK_WIDTH, MASK_HEIGHT);
-				cv::rectangle(mask_canvas, mask, cv::Scalar(255, 255, 255), -1);
-				cv::cvtColor(mask_canvas, mask_canvas_gray, cv::COLOR_BGR2GRAY);
-				cv::bitwise_and(altimeter_numbers_gray, mask_canvas_gray, bitwise_and_dst);
+				mask_canvas_gray = cv::Mat(frame.rows, frame.cols, CV_8UC1, cv::Scalar(0));
+				mask = cv::Rect(263, 59 + mask_offset%MASK_INTERVAL + mask_slide + MASK_INTERVAL * mask_num, MASK_WIDTH, MASK_HEIGHT);
+				cv::rectangle(mask_canvas_gray, mask, cv::Scalar(255, 255, 255), -1);
+				cv::bitwise_and(frame_gray, mask_canvas_gray, bitwise_and_dst);
 				count_nonzero[mask_num] = cv::countNonZero(bitwise_and_dst);
 			}
 
@@ -79,16 +77,16 @@ int main()
 		std::cout << mask_offset << " " << best_mask_slide << std::endl;
 
 		// draw rectangles on the numbers detected
-		for (int mask_num = 0; mask_num < 5; mask_num++)
+		for (int mask_num = 0; mask_num < NUM_OF_MASKS; mask_num++)
 		{
-			if (best_count_nonzero[mask_num] > 25)
+			if (best_count_nonzero[mask_num] > 50)
 			{
-				cv::Rect rect(0, mask_offset%MASK_INTERVAL + MASK_INTERVAL * mask_num, MASK_WIDTH, MASK_HEIGHT);
-				cv::rectangle(altimeter_numbers, rect, cv::Scalar(0, 255, 0), 1);
+				cv::Rect rect(263, 59 + mask_offset%MASK_INTERVAL + MASK_INTERVAL * mask_num, MASK_WIDTH, MASK_HEIGHT);
+				cv::rectangle(frame, rect, cv::Scalar(0, 255, 0), 1);
 			}
 		}
-		cv::imshow("mask", altimeter_numbers);
+		cv::imshow("mask", frame);
 		cv::waitKey(1);
-		frame++;
+		frame_num++;
 	}
 }
