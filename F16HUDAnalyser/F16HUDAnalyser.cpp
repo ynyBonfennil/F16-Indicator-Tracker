@@ -7,6 +7,7 @@
 
 #include "AltimeterTracker.h"
 #include "AirspeedIndicatorTracker.h"
+#include "CompassTracker.h"
 
 int tmp_main()
 {
@@ -19,13 +20,14 @@ int tmp_main()
 		std::cout << "Failed to open " << filepath << std::endl;
 		return -1;
 	}
-	video.set(cv::CAP_PROP_POS_FRAMES, 2060);
+	video.set(cv::CAP_PROP_POS_FRAMES, 10060);
 
 	int altimeter_mask_offset = 0;
 	int airspeed_mask_offset = 0;
 	cv::Mat frame;
 	AltimeterTracker altimeter_tracker;
 	AirspeedIndicatorTracker airspeed_tracker;
+	CompassTracker compass_tracker;
 
 	while (1)
 	{
@@ -55,13 +57,15 @@ int main()
 		std::cout << "Failed to open " << filepath << std::endl;
 		return -1;
 	}
-	video.set(cv::CAP_PROP_POS_FRAMES, 2060);
+	video.set(cv::CAP_PROP_POS_FRAMES, 5060);
 
 	int altimeter_mask_offset = 0;
 	int airspeed_mask_offset = 0;
+	int compass_mask_offset = 0;
 	cv::Mat frame;
 	AltimeterTracker altimeter_tracker;
 	AirspeedIndicatorTracker airspeed_tracker;
+	CompassTracker compass_tracker;
 
 	while (1)
 	{
@@ -82,12 +86,23 @@ int main()
 		airspeed_mask_offset = airspeed_tracker.get_mask_offset();
 		std::vector<cv::Rect> airspeed_mask_pos = airspeed_tracker.get_numbers_bbox();
 
+		compass_tracker.set_initial_mask_offset(compass_mask_offset);
+		compass_tracker.set_input_image(frame);
+		compass_tracker.fit();
+		compass_mask_offset = compass_tracker.get_mask_offset();
+		std::vector<cv::Rect> compass_mask_pos = compass_tracker.get_numbers_bbox();
+
 		for (auto itr = altimeter_mask_pos.begin(); itr != altimeter_mask_pos.end(); ++itr)
 		{
 			cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
 		}
 
 		for (auto itr = airspeed_mask_pos.begin(); itr != airspeed_mask_pos.end(); ++itr)
+		{
+			cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
+		}
+
+		for (auto itr = compass_mask_pos.begin(); itr != compass_mask_pos.end(); ++itr)
 		{
 			cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
 		}

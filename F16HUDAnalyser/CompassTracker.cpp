@@ -1,7 +1,7 @@
 #include <numeric>
-#include "AltimeterTracker.h"
+#include "CompassTracker.h"
 
-void AltimeterTracker::fit()
+void CompassTracker::fit()
 {
 	clear_parameters();
 	cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
@@ -13,8 +13,8 @@ void AltimeterTracker::fit()
 		{
 			mask_canvas_gray = cv::Mat(frame.rows, frame.cols, CV_8UC1, cv::Scalar(0));
 			mask = cv::Rect(
-				ALTIMETER_NUM_POS_X,
-				ALTIMETER_NUM_POS_Y + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num + mask_slide,
+				COMPASS_NUM_POS_X + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num + mask_slide,
+				COMPASS_NUM_POS_Y,
 				MASK_WIDTH,
 				MASK_HEIGHT);
 			cv::rectangle(mask_canvas_gray, mask, cv::Scalar(255, 255, 255), -1);
@@ -31,19 +31,35 @@ void AltimeterTracker::fit()
 		}
 	}
 	mask_offset += best_mask_slide;
+
+	//cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
+	mask_canvas_gray = cv::Mat(frame.rows, frame.cols, CV_8UC1, cv::Scalar(0));
+	for (int mask_num = 0; mask_num < NUM_OF_MASKS; mask_num++)
+	{
+		mask = cv::Rect(
+			COMPASS_NUM_POS_X + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num,
+			COMPASS_NUM_POS_Y,
+			MASK_WIDTH,
+			MASK_HEIGHT);
+		cv::rectangle(mask_canvas_gray, mask, cv::Scalar(255, 255, 255), -1);
+	}
+	cv::bitwise_and(frame_gray, mask_canvas_gray, bitwise_and_dst);
+	cv::imshow("compass", bitwise_and_dst);
+	cv::waitKey(1);
+
 }
 
-std::vector<cv::Rect> AltimeterTracker::get_numbers_bbox()
+std::vector<cv::Rect> CompassTracker::get_numbers_bbox()
 {
 	std::vector<cv::Rect> mask_pos = {};
 	// draw rectangles on the numbers detected
 	for (int mask_num = 0; mask_num < NUM_OF_MASKS; mask_num++)
 	{
-		if (best_count_nonzero[mask_num] > 40)
+		if (best_count_nonzero[mask_num] > 10)
 		{
 			cv::Rect rect(
-				ALTIMETER_NUM_POS_X,
-				ALTIMETER_NUM_POS_Y + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num,
+				COMPASS_NUM_POS_X + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num,
+				COMPASS_NUM_POS_Y,
 				MASK_WIDTH,
 				MASK_HEIGHT);
 			mask_pos.push_back(rect);
@@ -52,10 +68,10 @@ std::vector<cv::Rect> AltimeterTracker::get_numbers_bbox()
 	return mask_pos;
 }
 
-void AltimeterTracker::clear_parameters()
+void CompassTracker::clear_parameters()
 {
 	best_mask_slide = 0;
 	max_count_nonzero = 0;
-	count_nonzero = { 0, 0, 0, 0 };
-	best_count_nonzero = { 0, 0, 0, 0 };
+	count_nonzero = {};
+	best_count_nonzero = {};
 }

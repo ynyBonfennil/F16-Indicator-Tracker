@@ -24,6 +24,9 @@
     <ClCompile Include="AirspeedIndicatorTracker.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="CompassTracker.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -33,6 +36,9 @@
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="AirspeedIndicatorTracker.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="CompassTracker.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>

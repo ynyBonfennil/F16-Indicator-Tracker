@@ -165,11 +165,13 @@
   <ItemGroup>
     <ClCompile Include="AirspeedIndicatorTracker.cpp" />
     <ClCompile Include="AltimeterTracker.cpp" />
+    <ClCompile Include="CompassTracker.cpp" />
     <ClCompile Include="F16HUDAnalyser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AirspeedIndicatorTracker.h" />
     <ClInclude Include="AltimeterTracker.h" />
+    <ClInclude Include="CompassTracker.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
