@@ -18,6 +18,11 @@ public:
 		mask_offset = offset;
 	}
 
+	inline float get_airspeed_diff()
+	{
+		return ((float)best_mask_slide / MASK_INTERVAL) * 5;
+	}
+
 	inline int get_mask_offset()
 	{
 		return mask_offset;
@@ -48,4 +53,5 @@ private:
 	std::array<int, NUM_OF_MASKS> best_count_nonzero = { 0, 0, 0, 0 };
 
 	void clear_parameters();
+	void update_count_nonzero(int mask_slide);
 };
