@@ -1,7 +1,7 @@
 #include <numeric>
-#include "AltimeterTracker.h"
+#include "AirspeedIndicatorTracker.h"
 
-void AltimeterTracker::fit()
+void AirspeedIndicatorTracker::fit()
 {
 	clear_parameters();
 	cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
@@ -38,17 +38,17 @@ void AltimeterTracker::fit()
 	mask_offset += best_mask_slide;
 }
 
-std::vector<cv::Rect> AltimeterTracker::get_numbers_bbox()
+std::vector<cv::Rect> AirspeedIndicatorTracker::get_numbers_bbox()
 {
 	std::vector<cv::Rect> mask_pos = {};
 	// draw rectangles on the numbers detected
 	for (int mask_num = 0; mask_num < NUM_OF_MASKS; mask_num++)
 	{
-		if (best_count_nonzero[mask_num] > -1)
+		if (best_count_nonzero[mask_num] > 10)
 		{
 			cv::Rect rect(
-				ALTIMETER_NUM_POS_X,
-				ALTIMETER_NUM_POS_Y + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num,
+				INDICATOR_NUM_POS_X,
+				INDICATOR_NUM_POS_Y + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num,
 				MASK_WIDTH,
 				MASK_HEIGHT);
 			mask_pos.push_back(rect);
@@ -57,7 +57,7 @@ std::vector<cv::Rect> AltimeterTracker::get_numbers_bbox()
 	return mask_pos;
 }
 
-void AltimeterTracker::clear_parameters()
+void AirspeedIndicatorTracker::clear_parameters()
 {
 	best_mask_slide = 0;
 	max_count_nonzero = 0;
@@ -65,14 +65,14 @@ void AltimeterTracker::clear_parameters()
 	best_count_nonzero = { 0, 0, 0, 0 };
 }
 
-void AltimeterTracker::update_count_nonzero(int mask_slide)
+void AirspeedIndicatorTracker::update_count_nonzero(int mask_slide)
 {
 	for (int mask_num = 0; mask_num < NUM_OF_MASKS; mask_num++)
 	{
 		mask_canvas_gray = cv::Mat(frame.rows, frame.cols, CV_8UC1, cv::Scalar(0));
 		mask = cv::Rect(
-			ALTIMETER_NUM_POS_X,
-			ALTIMETER_NUM_POS_Y + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num + mask_slide,
+			INDICATOR_NUM_POS_X,
+			INDICATOR_NUM_POS_Y + mask_offset % MASK_INTERVAL + MASK_INTERVAL * mask_num + mask_slide,
 			MASK_WIDTH,
 			MASK_HEIGHT);
 		cv::rectangle(mask_canvas_gray, mask, cv::Scalar(255, 255, 255), -1);

@@ -11,21 +11,6 @@
 #include "CompassTracker.h"
 
 
-inline float offset_to_altitude(int offset)
-{
-	return 0.0237 * offset + 25;
-}
-
-inline float offset_to_airspeed(int offset)
-{
-	return 0.234 * offset + 39.9;
-}
-
-inline float offset_to_direction(int offset)
-{
-	return - 0.0346 * offset + 31.7;
-}
-
 int main()
 {
 	/*
@@ -113,28 +98,25 @@ int main()
 		compass_mask_offset = compass_tracker.get_mask_offset();
 		std::vector<cv::Rect> compass_mask_pos = compass_tracker.get_numbers_bbox();
 
-		// for (auto itr = altimeter_mask_pos.begin(); itr != altimeter_mask_pos.end(); ++itr)
-		// {
-		// 	cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
-		// }
+		for (auto itr = altimeter_mask_pos.begin(); itr != altimeter_mask_pos.end(); ++itr)
+		{
+			cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
+		}
 
-		// for (auto itr = airspeed_mask_pos.begin(); itr != airspeed_mask_pos.end(); ++itr)
-		// {
-		// 	cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
-		// }
+		for (auto itr = airspeed_mask_pos.begin(); itr != airspeed_mask_pos.end(); ++itr)
+		{
+			cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
+		}
 
-		// for (auto itr = compass_mask_pos.begin(); itr != compass_mask_pos.end(); ++itr)
-		// {
-		// 	cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
-		// }
+		for (auto itr = compass_mask_pos.begin(); itr != compass_mask_pos.end(); ++itr)
+		{
+			cv::rectangle(frame, *itr, cv::Scalar(0, 255, 0), 1);
+		}
 
-		// file << offset_to_altitude(altimeter_mask_offset) << ","
-		// 	<< offset_to_airspeed(airspeed_mask_offset) << ","
-		// 	<< offset_to_direction(compass_mask_offset) << "\n";
 		file << frame_num << "," << altimeter_diff << "," << airspeed_diff << "," << compass_diff << std::endl;
 
-		// cv::imshow("frame", frame);
-		// cv::waitKey(1);
+		cv::imshow("frame", frame);
+		cv::waitKey(1);
 		frame_num++;
 	}
 	file.close();
