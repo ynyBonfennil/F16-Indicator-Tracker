@@ -262,3 +262,6 @@ __pycache__/
 
 # original movie
 movie.mp4
+
+# csv
+*.csv
